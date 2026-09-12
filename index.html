@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Ventas y Registro</title>
+  <!-- Tailwind CSS para diseño moderno y responsivo -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Iconos de FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col text-slate-800">
+
+  <!-- Encabezado / Navbar -->
+  <header class="bg-indigo-700 text-white p-4 shadow-md sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold flex items-center gap-2">
+        <i class="fa-solid font-bold fa-cash-register"></i> Punto de Venta
+      </h1>
+      <div class="text-sm bg-indigo-800 px-3 py-1.5 rounded-lg flex items-center gap-3">
+        <span>Ventas del día: <strong id="daily-count">0</strong></span>
+        <span>|</span>
+        <span>Total: <strong id="daily-total">$0.00</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido Principal -->
+  <main class="max-w-7xl mx-auto w-full p-4 grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+
+    <!-- COLUMNA 1 y 2: Catálogo de Productos -->
+    <section class="lg:col-span-2 flex flex-col gap-4">
+      <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
+        <h2 class="text-lg font-semibold text-slate-700">Catálogo de Productos</h2>
+        <!-- Filtro por categoría opcional -->
+        <div class="relative">
+          <input type="text" id="search-input" onkeyup="filterProducts()" placeholder="Buscar producto..." 
+                 class="pl-9 pr-4 py-1.5 bg-slate-100 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+        </div>
+      </div>
+
+      <!-- Grid de Productos -->
+      <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <!-- Los productos se cargan dinámicamente con JavaScript -->
+      </div>
+    </section>
+
+    <!-- COLUMNA 3: Carrito / Ticket Actual -->
+    <section class="bg-white p-5 rounded-xl shadow-sm flex flex-col justify-between border border-slate-200 h-[fit-content]">
+      <div>
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+          <h2 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+            <i class="fa-solid fa-receipt text-indigo-600"></i> Pedido Actual
+          </h2>
+          <button onclick="clearCart()" class="text-xs text-red-500 hover:underline">Vaciar</button>
+        </div>
+
+        <!-- Lista de Items en el Carrito -->
+        <div id="cart-items" class="flex flex-col gap-3 max-h-60 overflow-y-auto pr-1">
+          <!-- Items del carrito -->
+        </div>
+      </div>
+
+      <!-- Resumen y Pago -->
+      <div class="border-t pt-4 mt-6">
+        <div class="flex justify-between text-slate-600 mb-2">
+          <span>Subtotal:</span>
+          <span id="cart-subtotal" class="font-medium">$0.00</span>
+        </div>
+        <div class="flex justify-between text-lg font-bold text-slate-800 mb-4">
+          <span>Total a Pagar:</span>
+          <span id="cart-total" class="text-indigo-600">$0.00</span>
+        </div>
+
+        <!-- Selección de Método de Pago -->
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Método de Pago</label>
+          <select id="payment-method" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500">
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta">Tarjeta / POS</option>
+            <option value="Transferencia / Pago Móvil">Transferencia / Pago Móvil</option>
+            <option value="USD / Divisa">USD / Divisa</option>
+          </select>
+        </div>
+
+        <!-- Botón de Confirmación -->
+        <button onclick="processSale()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check-circle"></i> Registrar Venta
+        </button>
+      </div>
+    </section>
+
+    <!-- SECCIÓN INFERIOR: Historial de Ventas -->
+    <section class="lg:col-span-3 bg-white p-5 rounded-xl shadow-sm mt-4 border border-slate-200">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4 mb-4">
+        <div>
+          <h2 class="text-lg font-semibold text-slate-700">Historial de Ventas</h2>
+          <p class="text-xs text-slate-500">Registro guardado localmente en este navegador</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-lg font-medium flex items-center gap-1 transition">
+            <i class="fa-solid fa-file-excel"></i> Exportar a Excel (CSV)
+          </button>
+          <button onclick="clearHistory()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs px-3 py-2 rounded-lg font-medium transition">
+            Borrar Historial
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla de Registro -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-600">
+          <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+            <tr>
+              <th class="p-3"># ID</th>
+              <th class="p-3">Fecha y Hora</th>
+              <th class="p-3">Detalle</th>
+              <th class="p-3">Método</th>
+              <th class="p-3 text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody id="sales-history-body" class="divide-y divide-slate-100">
+            <!-- Filas generadas por JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- LÓGICA EN JAVASCRIPT -->
+  <script>
+    // 1. Catálogo Base de Productos (Puedes editar precios y nombres)
+    const products = [
+      { id: 1, name: "Café Espresso", price: 2.50, category: "Bebidas", icon: "fa-coffee" },
+      { id: 2, name: "Capuchino", price: 3.50, category: "Bebidas", icon: "fa-mug-hot" },
+      { id: 3, name: "Empanada Tradicional", price: 2.00, category: "Comida", icon: "fa-utensils" },
+      { id: 4, name: "Empanada Especial", price: 2.80, category: "Comida", icon: "fa-burger" },
+      { id: 5, name: "Jugo Natural", price: 2.20, category: "Bebidas", icon: "fa-glass-water" },
+      { id: 6, name: "Combo Desayuno", price: 5.00, category: "Combos", icon: "fa-box" }
+    ];
+
+    // Estado de la aplicación
+    let cart = [];
+    let salesHistory = JSON.parse(localStorage.getItem('sales_history')) || [];
+
+    // Cargar la aplicación al iniciar
+    document.addEventListener('DOMContentLoaded', () => {
+      renderProducts(products);
+      renderCart();
+      renderHistory();
+    });
+
+    // Renderizar Productos en Pantalla
+    function renderProducts(items) {
+      const grid = document.getElementById('product-grid');
+      grid.innerHTML = '';
+
+      items.forEach(product => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between";
+        card.onclick = () => addToCart(product.id);
+        
+        card.innerHTML = `
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg">
+              <i class="fa-solid ${product.icon}"></i>
+            </div>
+            <div>
+              <h3 class="font-medium text-sm text-slate-800 line-clamp-1">${product.name}</h3>
+              <span class="text-xs text-slate-400">${product.category}</span>
+            </div>
+          </div>
+          <div class="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">
+            <span class="font-bold text-indigo-600">$${product.price.toFixed(2)}</span>
+            <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md font-semibold">+ Agregar</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Filtrar Productos
+    function filterProducts() {
+      const query = document.getElementById('search-input').value.toLowerCase();
+      const filtered = products.filter(p => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query));
+      renderProducts(filtered);
+    }
+
+    // Agregar Producto al Carrito
+    function addToCart(productId) {
+      const product = products.find(p => p.id === productId);
+      const existing = cart.find(item => item.id === productId);
+
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ ...product, quantity: 1 });
+      }
+      renderCart();
+    }
+
+    // Modificar Cantidad en el Carrito
+    function changeQuantity(productId, delta) {
+      const item = cart.find(i => i.id === productId);
+      if (!item) return;
+
+      item.quantity += delta;
+      if (item.quantity <= 0) {
+        cart = cart.filter(i => i.id !== productId);
+      }
+      renderCart();
+    }
+
+    // Vaciar Carrito
+    function clearCart() {
+      cart = [];
+      renderCart();
+    }
+
+    // Renderizar Carrito y Totales
+    function renderCart() {
+      const container = document.getElementById('cart-items');
+      container.innerHTML = '';
+
+      if (cart.length === 0) {
+        container.innerHTML = `<p class="text-slate-400 text-center py-8 text-sm">No hay productos seleccionados</p>`;
+      } else {
+        cart.forEach(item => {
+          const div = document.createElement('div');
+          div.className = "flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-sm";
+          div.innerHTML = `
+            <div class="flex-1">
+              <p class="font-medium text-slate-700">${item.name}</p>
+              <p class="text-xs text-slate-400">$${item.price.toFixed(2)} c/u</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="changeQuantity(${item.id}, -1)" class="w-6 h-6 bg-white border border-slate-300 rounded text-slate-600 flex items-center justify-center hover:bg-slate-100">-</button>
+              <span class="font-semibold text-xs px-1">${item.quantity}</span>
+              <button onclick="changeQuantity(${item.id}, 1)" class="w-6 h-6 bg-white border border-slate-300 rounded text-slate-600 flex items-center justify-center hover:bg-slate-100">+</button>
+            </div>
+            <div class="w-16 text-right font-bold text-slate-700">
+              $${(item.price * item.quantity).toFixed(2)}
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      }
+
+      // Calcular Subtotal y Total
+      const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      document.getElementById('cart-subtotal').innerText = `$${total.toFixed(2)}`;
+      document.getElementById('cart-total').innerText = `$${total.toFixed(2)}`;
+    }
+
+    // Procesar Venta
+    function processSale() {
+      if (cart.length === 0) {
+        alert("El carrito está vacío. Agrega al menos un producto.");
+        return;
+      }
+
+      const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const method = document.getElementById('payment-method').value;
+
+      const sale = {
+        id: 'V-' + String(salesHistory.length + 1).padStart(4, '0'),
+        date: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }),
+        items: cart.map(i => `${i.name} (x${i.quantity})`).join(', '),
+        method: method,
+        total: total
+      };
+
+      salesHistory.unshift(sale);
+      localStorage.setItem('sales_history', JSON.stringify(salesHistory));
+
+      // Resetear estado
+      cart = [];
+      renderCart();
+      renderHistory();
+
+      alert("¡Venta registrada con éxito!");
+    }
+
+    // Renderizar Historial de Ventas
+    function renderHistory() {
+      const tbody = document.getElementById('sales-history-body');
+      tbody.innerHTML = '';
+
+      let dayTotal = 0;
+
+      if (salesHistory.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Sin ventas registradas aún.</td></tr>`;
+      } else {
+        salesHistory.forEach(sale => {
+          dayTotal += sale.total;
+
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+          tr.innerHTML = `
+            <td class="p-3 font-semibold text-xs text-indigo-600">${sale.id}</td>
+            <td class="p-3 text-xs whitespace-nowrap">${sale.date}</td>
+            <td class="p-3 text-xs text-slate-700 max-w-xs truncate" title="${sale.items}">${sale.items}</td>
+            <td class="p-3 text-xs"><span class="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-600">${sale.method}</span></td>
+            <td class="p-3 text-xs text-right font-bold text-slate-800">$${sale.total.toFixed(2)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Actualizar Contadores del Encabezado
+      document.getElementById('daily-count').innerText = salesHistory.length;
+      document.getElementById('daily-total').innerText = `$${dayTotal.toFixed(2)}`;
+    }
+
+    // Limpiar Historial de Ventas
+    function clearHistory() {
+      if (confirm("¿Estás seguro de que deseas borrar todo el historial de ventas?")) {
+        salesHistory = [];
+        localStorage.removeItem('sales_history');
+        renderHistory();
+      }
+    }
+
+    // Exportar Historial a Archivo CSV (Excel)
+    function exportToCSV() {
+      if (salesHistory.length === 0) {
+        alert("No hay ventas para exportar.");
+        return;
+      }
+
+      let csvContent = "data:text/csv;charset=utf-8,ID,Fecha y Hora,Detalle,Metodo de Pago,Total\n";
+
+      salesHistory.forEach(sale => {
+        // Limpiar comas internas en los detalles
+        const cleanItems = `"${sale.items.replace(/"/g, '""')}"`;
+        csvContent += `${sale.id},${sale.date},${cleanItems},${sale.method},${sale.total.toFixed(2)}\n`;
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `reporte_ventas_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
